@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Generador de patrones de Pokémon retro. Crea y descarga patrones animados de Pokémon en formato GIF y PNG."
+    />
+    <meta
+      name="keywords"
+      content="pokemon, pokemon pattern, pattern pikachu, pokemon pixel art, generador de patrones, patrones animados, descargar GIF, descargar PNG"
+    />
+    <title>Generador de Patrones de Pokémon Retro</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      header {
+        background-color: #ffcc00;
+        width: 100%;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      header h1 {
+        margin: 0;
+        font-size: 2em;
+        color: #333;
+      }
+      .controls {
+        margin: 20px 0;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+      .controls button,
+      .controls select {
+        padding: 10px 20px;
+        font-size: 1em;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      .controls button {
+        background-color: #ffcc00;
+        color: #333;
+      }
+      .controls button:hover {
+        background-color: #ff9900;
+      }
+      .controls select {
+        background-color: #fff;
+        color: #333;
+        border: 1px solid #ccc;
+      }
+      canvas {
+        border: 1px solid #ccc;
+        background-color: #fff;
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <!-- Google tag (gtag.js) -->
+  <script
+    async
+    src="https://www.googletagmanager.com/gtag/js?id=G-TWTEGM9NTR"
+  ></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag("js", new Date());
+
+    gtag("config", "G-TWTEGM9NTR");
+  </script>
+  <body>
+    <header>
+      <h1>Generador de Patrones de Pokémon Retro</h1>
+    </header>
+    <div class="controls">
+      <button id="generate">Generar Nuevo Patrón</button>
+      <button id="animate">Animar Patrón</button>
+      <button id="pause">Pausar Animación</button>
+      <button id="download">Descargar como GIF</button>
+      <button id="download-png">Descargar como PNG</button>
+      <label for="speed">Velocidad de Animación:</label>
+      <select id="speed">
+        <option value="100">Rápido</option>
+        <option value="200">Medio</option>
+        <option value="500">Lento</option>
+        <option value="1000">Super Lento</option>
+      </select>
+      <label for="color">Color del Patrón:</label>
+      <select id="color">
+        <option value="yellow">Amarillo</option>
+        <option value="red">Rojo</option>
+        <option value="blue">Azul</option>
+        <option value="green">Verde</option>
+        <option value="random">Aleatorio</option>
+      </select>
+      <label for="background">Color de Fondo:</label>
+      <select id="background">
+        <option value="black">Negro</option>
+        <option value="white">Blanco</option>
+        <option value="red">Rojo</option>
+        <option value="blue">Azul</option>
+        <option value="green">Verde</option>
+        <option value="random">Aleatorio</option>
+        <option value="gradient">Degradado</option>
+      </select>
+      <label for="pokemon">Seleccionar Pokémon:</label>
+      <select id="pokemon">
+        <option value="pikachu">Pikachu</option>
+        <option value="charizard">Charizard</option>
+        <option value="bulbasaur">Bulbasaur</option>
+        <option value="random">Aleatorio</option>
+      </select>
+    </div>
+    <canvas id="canvas"></canvas>
+    <canvas id="canvas"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/gif.js/dist/gif.js"></script>
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = 800;
+      canvas.height = 600;
+      let animationFrameId;
+      let currentColor = "yellow";
+      let currentBackground = "black";
+      let currentPokemon = "pikachu";
+      let isAnimating = false;
+
+      const patterns = {
+        pikachu: [
+          "   XXXX   ",
+          "  X    XX ",
+          " X  XX  X ",
+          "X X  X  X ",
+          "X      XX ",
+          "X X  X X  ",
+          " X  XX  X ",
+          "  X    X  ",
+          "   XXXX   ",
+        ],
+        charizard: [
+          "   XXXXXXX   ",
+          "  X       X  ",
+          " X  XXXXX  X ",
+          "X  X     X  X",
+          "X  X     X  X",
+          "X  XXXXXXX  X",
+          " X         X ",
+          "  X       X  ",
+          "   XXXXXXX   ",
+        ],
+        bulbasaur: [
+          "   XXXXX   ",
+          "  X     X  ",
+          " X  XXX  X ",
+          "X  X   X  X",
+          "X  X   X  X",
+          "X  XXXXX  X",
+          " X       X ",
+          "  X     X  ",
+          "   XXXXX   ",
+        ],
+      };
+
+      function drawPokemon(x, y, color, pattern) {
+        const size = 10; // Tamaño de cada "pixel"
+        ctx.fillStyle = color;
+        pattern.forEach((row, i) => {
+          row.split("").forEach((pixel, j) => {
+            if (pixel === "X") {
+              ctx.fillRect(x + j * size, y + i * size, size, size);
+            }
+          });
+        });
+      }
+
+      function drawPattern() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        setBackground();
+        const patternCount = Math.floor(Math.random() * 10) + 5; // De 5 a 15 patrones
+
+        for (let i = 0; i < patternCount; i++) {
+          const x = Math.random() * (canvas.width - 90); // 90 es el ancho aproximado de los patrones
+          const y = Math.random() * (canvas.height - 90); // 90 es la altura aproximada de los patrones
+          const color =
+            currentColor === "random" ? getRandomRGBColor() : currentColor;
+          const pattern =
+            currentPokemon === "random"
+              ? getRandomPattern()
+              : patterns[currentPokemon];
+          drawPokemon(x, y, color, pattern);
+        }
+      }
+
+      function getRandomColor() {
+        const colors = ["yellow", "red", "blue", "green"];
+        return colors[Math.floor(Math.random() * colors.length)];
+      }
+
+      function getRandomRGBColor() {
+        const r = Math.floor(Math.random() * 256);
+        const g = Math.floor(Math.random() * 256);
+        const b = Math.floor(Math.random() * 256);
+        return `rgb(${r},${g},${b})`;
+      }
+
+      function getRandomPattern() {
+        const keys = Object.keys(patterns);
+        return patterns[keys[Math.floor(Math.random() * keys.length)]];
+      }
+
+      function setBackground() {
+        if (currentBackground === "random") {
+          ctx.fillStyle = getRandomRGBColor();
+        } else if (currentBackground === "gradient") {
+          const gradient = ctx.createLinearGradient(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
+          gradient.addColorStop(0, getRandomRGBColor());
+          gradient.addColorStop(1, getRandomRGBColor());
+          ctx.fillStyle = gradient;
+        } else {
+          ctx.fillStyle = currentBackground;
+        }
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function animatePattern() {
+        if (!isAnimating) return;
+        drawPattern();
+        const speed = document.getElementById("speed").value;
+        animationFrameId = setTimeout(animatePattern, speed);
+      }
+
+      document.getElementById("generate").addEventListener("click", () => {
+        clearTimeout(animationFrameId);
+        isAnimating = false;
+        drawPattern();
+      });
+
+      document.getElementById("animate").addEventListener("click", () => {
+        clearTimeout(animationFrameId);
+        isAnimating = true;
+        animatePattern();
+      });
+
+      document.getElementById("pause").addEventListener("click", () => {
+        clearTimeout(animationFrameId);
+        isAnimating = false;
+      });
+
+      document.getElementById("color").addEventListener("change", (event) => {
+        currentColor = event.target.value;
+      });
+
+      document
+        .getElementById("background")
+        .addEventListener("change", (event) => {
+          currentBackground = event.target.value;
+        });
+
+      document.getElementById("pokemon").addEventListener("change", (event) => {
+        currentPokemon = event.target.value;
+      });
+
+      document.getElementById("download").addEventListener("click", () => {
+        const gif = new GIF({
+          workers: 2,
+          quality: 10,
+          workerScript:
+            "https://cdn.jsdelivr.net/npm/gif.js/dist/gif.worker.js",
+        });
+
+        for (let i = 0; i < 30; i++) {
+          // Generar 30 frames para el GIF
+          drawPattern();
+          gif.addFrame(canvas, { copy: true, delay: 100 });
+        }
+
+        gif.on("finished", function (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "pokemon_pattern.gif";
+          a.click();
+        });
+
+        gif.render();
+      });
+
+      document.getElementById("download-png").addEventListener("click", () => {
+        const link = document.createElement("a");
+        link.download = "pokemon_pattern.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+
+      drawPattern(); // Dibuja un patrón inicial
+    </script>
+  </body>
+</html>
